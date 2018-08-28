@@ -80,6 +80,7 @@ func (service *WebSocketService) keepReading(conn *websocket.Conn) () {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			service.closeConn(conn)
+			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		fmt.Println("Received message from client: " + string(message))

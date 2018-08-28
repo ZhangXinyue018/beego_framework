@@ -3,11 +3,13 @@ package main
 import (
 	_ "beego_framework/routers"
 	_ "beego_framework/bean"
+	_ "net/http/pprof"
 
 	"github.com/astaxie/beego"
 	"fmt"
 	"beego_framework/cronjobs"
 	"beego_framework/bean"
+	"net/http"
 )
 
 func main() {
@@ -28,4 +30,7 @@ func main() {
 func PerformSetUp() {
 	go cronjobs.StartCronjobs()
 	go bean.WebSocketServiceBean.HandleChannelEvents()
+	go func() {
+		http.ListenAndServe("localhost:6060", nil)
+	}()
 }
