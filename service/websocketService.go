@@ -1,41 +1,59 @@
 package service
 
 import (
-	"encoding/json"
 	"github.com/gorilla/websocket"
 	"beego_framework/domain/socket"
+	"fmt"
 )
 
 type WebSocketService struct {
-	ClientChannelMap map[*websocket.Conn]map[string]bool
-	EventChannels    map[string]socket.EventChannel
+	EventChannels map[string]socket.EventChannel
+	ConnectionMap map[*websocket.Conn]bool
 }
 
 func (service *WebSocketService) HandleChannelEvents() () {
 	for {
-		for eventName, eventChannel := range service.EventChannels {
+		for _, eventChannel := range service.EventChannels {
 			select {
 			case broadcast := <-eventChannel.Broadcast:
-				message, err := json.Marshal(broadcast)
-				if err != nil {
-					continue
-				}
 				for connection, value := range eventChannel.Clients {
 					if value {
-						if connection.WriteMessage(websocket.TextMessage, message) != nil {
-							//ignore
+						err := connection.WriteJSON(broadcast)
+						if err != nil {
+							fmt.Println(err)
+							service.CloseConn(connection)
 						}
-					} else {
-						eventChannel.UnRegister <- connection
 					}
 				}
 			case register := <-eventChannel.Register:
 				eventChannel.Clients[register] = true
-				service.ClientChannelMap[register][eventName] = true
 			case unRegister := <-eventChannel.UnRegister:
 				delete(eventChannel.Clients, unRegister)
-				delete(service.ClientChannelMap[unRegister], eventName)
 			}
 		}
 	}
+}
+
+func (service *WebSocketService) JoinEvent(conn *websocket.Conn, eventName string) () {
+	if _, ok := service.EventChannels[eventName]; !ok {
+		service.EventChannels[eventName] = socket.EventChannel{
+			Clients:    map[*websocket.Conn]bool{},
+			Broadcast:  make(chan socket.Message, 10),
+			Register:   make(chan *websocket.Conn, 10),
+			UnRegister: make(chan *websocket.Conn, 10),
+		}
+	}
+	service.EventChannels[eventName].Register <- conn
+}
+
+func (service *WebSocketService) CreateConn(conn *websocket.Conn) () {
+	service.ConnectionMap[conn] = true
+	service.JoinEvent(conn, "broadcast")
+}
+
+func (service *WebSocketService) CloseConn(conn *websocket.Conn) () {
+	for _, eventChannel := range service.EventChannels {
+		eventChannel.UnRegister <- conn
+	}
+	conn.Close()
 }
