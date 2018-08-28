@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	newline  = []byte{'\n'}
-	space    = []byte{' '}
+	newline = []byte{'\n'}
+	space   = []byte{' '}
 )
 
 type WebSocketService struct {
@@ -25,11 +25,12 @@ func (service *WebSocketService) HandleChannelEvents() () {
 			case broadcast := <-eventChannel.Broadcast:
 				for connection, value := range eventChannel.Clients {
 					if value {
-						err := connection.WriteJSON(broadcast)
-						if err != nil {
-							fmt.Println(err)
-							service.closeConn(connection)
-						}
+						go func() {
+							err := connection.WriteJSON(broadcast)
+							if err != nil {
+								service.closeConn(connection)
+							}
+						}()
 					}
 				}
 			case register := <-eventChannel.Register:
