@@ -5,10 +5,9 @@ import (
 	"beego_framework/bean"
 )
 
-func CronUpdateExchangerRate(){
+func StartCronjobs(){
 	cronjob := cron.New()
-	spec := "@every 2m"
-	cronjob.AddFunc(spec, func() {
+	cronjob.AddFunc("@every 2m", func() {
 		defer func(){
 			if x := recover(); x != nil {
 				// just ignore

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <title>Sample of websocket with golang</title>
+    <script src="http://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+
+    <script>
+        $(function() {
+            var ws = new WebSocket('ws://localhost:8080/v1/ws');
+
+            ws.onmessage = function(e) {
+                $('<li>').text(event.data).appendTo($ul);
+            };
+            var $ul = $('#msg-list');
+
+            $('#sendreq').on('click', function() {
+                ws.send($('#myMessage').val());
+                $('#myMessage').val('');
+            });
+        });
+    </script>
+</head>
+<body>
+<input type="text" id="myMessage">
+<button id="sendreq">Send req</button>
+<ul id="msg-list"></ul>
+</body>
+</html>

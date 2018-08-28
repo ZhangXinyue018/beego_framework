@@ -7,12 +7,14 @@ import (
 	"github.com/astaxie/beego"
 	"fmt"
 	"beego_framework/cronjobs"
+	"beego_framework/bean"
 )
 
 func main() {
-	PerformCronjobs()
+	PerformSetUp()
+	PerformSetUp()
 	err := beego.LoadAppConfig("ini", "conf/app.conf")
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
 		panic(err)
 	}
@@ -23,6 +25,7 @@ func main() {
 	beego.Run()
 }
 
-func PerformCronjobs(){
-	go cronjobs.CronUpdateExchangerRate()
+func PerformSetUp() {
+	go cronjobs.StartCronjobs()
+	go bean.WebSocketServiceBean.HandleChannelEvents()
 }

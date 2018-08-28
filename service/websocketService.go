@@ -4,6 +4,13 @@ import (
 	"github.com/gorilla/websocket"
 	"beego_framework/domain/socket"
 	"fmt"
+	"time"
+	"bytes"
+)
+
+var (
+	newline  = []byte{'\n'}
+	space    = []byte{' '}
 )
 
 type WebSocketService struct {
@@ -21,7 +28,7 @@ func (service *WebSocketService) HandleChannelEvents() () {
 						err := connection.WriteJSON(broadcast)
 						if err != nil {
 							fmt.Println(err)
-							service.CloseConn(connection)
+							service.closeConn(connection)
 						}
 					}
 				}
@@ -49,11 +56,39 @@ func (service *WebSocketService) JoinEvent(conn *websocket.Conn, eventName strin
 func (service *WebSocketService) CreateConn(conn *websocket.Conn) () {
 	service.ConnectionMap[conn] = true
 	service.JoinEvent(conn, "broadcast")
+	go func() {
+		if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+			return
+		}
+	}()
+	go service.keepReading(conn)
 }
 
-func (service *WebSocketService) CloseConn(conn *websocket.Conn) () {
+func (service *WebSocketService) closeConn(conn *websocket.Conn) () {
 	for _, eventChannel := range service.EventChannels {
 		eventChannel.UnRegister <- conn
 	}
 	conn.Close()
+}
+
+func (service *WebSocketService) keepReading(conn *websocket.Conn) () {
+	defer func() {
+		service.closeConn(conn)
+	}()
+	for {
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			service.closeConn(conn)
+		}
+		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+		fmt.Println("Received message from client: " + string(message))
+		service.generateMessages(string(message))
+	}
+}
+
+func (service *WebSocketService) generateMessages(msgContent string) () {
+	msg := socket.Message{Message: time.Now().Format("2006-01-02 15:04:05") + ": " + msgContent}
+	if value, ok := service.EventChannels["broadcast"]; ok {
+		value.Broadcast <- msg
+	}
 }
