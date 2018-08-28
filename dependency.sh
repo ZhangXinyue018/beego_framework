@@ -10,3 +10,4 @@ go get gopkg.in/mgo.v2
 go get github.com/cweill/gotests
 go get github.com/pkg/errors
 go get github.com/skip2/go-qrcode
+go get github.com/gorilla/websocket
