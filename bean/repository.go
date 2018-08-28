@@ -2,15 +2,14 @@ package bean
 
 import (
 	"beego_framework/repository/mysql"
-	"beego_framework/repository/mongo"
-)
+	)
 
 var (
 	MysqlTestRepoBean *mysql.TestMysqlRepository
 )
 
 var (
-	MongoTestRepoBean *mongo.TestMongoRepository
+	//MongoTestRepoBean *mongo.TestMongoRepository
 )
 
 func init() {
@@ -19,9 +18,9 @@ func init() {
 		TestMysqlWriteEngine: MysqlWriteEngineBean,
 	}
 
-	MongoTestRepoBean = &mongo.TestMongoRepository{
-		TestMongoSession:   MongoSessionBean,
-		TestDBName:         "test",
-		TestCollectionName: "test",
-	}
+	//MongoTestRepoBean = &mongo.TestMongoRepository{
+	//	TestMongoSession:   MongoSessionBean,
+	//	TestDBName:         "test",
+	//	TestCollectionName: "test",
+	//}
 }

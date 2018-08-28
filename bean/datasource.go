@@ -15,14 +15,14 @@ var (
 	MysqlReadEngineBean  *xorm.Engine
 	MysqlWriteEngineBean *xorm.Engine
 
-	MongoSessionBean *mgo.Session
+	//MongoSessionBean *mgo.Session
 )
 
 func init() {
 	MysqlReadEngineBean = getMysqlEngine(beego.AppConfig.String("read_mysql_url"))
 	MysqlWriteEngineBean = getMysqlEngine(beego.AppConfig.String("write_mysql_url"))
 
-	MongoSessionBean = getMongoSession(beego.AppConfig.String("mongo_url"))
+	//MongoSessionBean = getMongoSession(beego.AppConfig.String("mongo_url"))
 }
 
 func getAdminRedisClient() (*redis.Client) {

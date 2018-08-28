@@ -3,109 +3,72 @@ package controllers
 import (
 	"github.com/gorilla/websocket"
 	"fmt"
-	"time"
 	"log"
-	"bytes"
-)
-
-var (
-	newline = []byte{'\n'}
-	space   = []byte{' '}
+	"time"
+	"net/http"
 )
 
 type WebSocketController struct {
 	MainController
 }
 
-type ConnectionClinet struct {
-	Connection *websocket.Conn
-	send chan []byte
+var clients = make(map[*websocket.Conn]bool)
+var broadcast = make(chan Message)
+
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
 }
 
-var Upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
+type Message struct {
+	Message string `json:"message"`
 }
 
+func init() {
+	go handleMessages()
+	go func() {
+		for {
+			time.Sleep(time.Second * 3)
+			msg := Message{Message: "这是向页面发送的数据 " + time.Now().Format("2006-01-02 15:04:05")}
+			broadcast <- msg
+		}
+	}()
+	go func() {
+		for {
+			time.Sleep(time.Second * 3)
+			fmt.Println(clients)
+		}
+
+	}()
+}
+
+// @router / [get]
 func (webSocketController *WebSocketController) Get() {
-	conn, err := Upgrader.Upgrade(
+	fmt.Println("Enter!!!")
+	conn, err := upgrader.Upgrade(
 		webSocketController.Ctx.ResponseWriter,
 		webSocketController.Ctx.Request,
-		nil,
-	)
+		nil)
 	if err != nil {
+		fmt.Println("Encounter error!!!")
 		fmt.Println(err)
 		return
 	}
-	connectionClinet := ConnectionClinet{
-		Connection: conn,
-	}
-	go connectionClinet.writeData()
-	go connectionClinet.readData()
+
+	clients[conn] = true
 }
 
-func (conn *ConnectionClinet) writeData() {
-	ticker := time.NewTicker(54 * time.Second)
-	defer func() {
-		ticker.Stop()
-		conn.Connection.Close()
-	}()
+func handleMessages() {
 	for {
-		select {
-		case message, ok := <-conn.send:
-			conn.Connection.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			if !ok {
-				// The hub closed the channel.
-				conn.Connection.WriteMessage(websocket.CloseMessage, []byte{})
-				return
-			}
-
-			w, err := conn.Connection.NextWriter(websocket.TextMessage)
+		msg := <-broadcast
+		for client := range clients {
+			err := client.WriteJSON(msg)
 			if err != nil {
-				return
-			}
-			w.Write(message)
-
-			// Add queued chat messages to the current websocket message.
-			n := len(conn.send)
-			for i := 0; i < n; i++ {
-				w.Write(newline)
-				w.Write(<-conn.send)
-			}
-
-			if err := w.Close(); err != nil {
-				return
-			}
-		case <-ticker.C:
-			conn.Connection.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			if err := conn.Connection.WriteMessage(websocket.PingMessage, nil); err != nil {
-				return
+				log.Printf("client.WriteJSON error: %v", err)
+				client.Close()
+				delete(clients, client)
 			}
 		}
-	}
-}
-
-func (conn *ConnectionClinet) readData() {
-	defer func() {
-		conn.Connection.Close()
-	}()
-	conn.Connection.SetReadLimit(512)
-	conn.Connection.SetReadDeadline(time.Now().Add(60 * time.Second))
-	conn.Connection.SetPongHandler(
-		func(string) error {
-			conn.Connection.SetReadDeadline(time.Now().Add(60 * time.Second));
-			return nil
-		},
-	)
-	for {
-		_, message, err := conn.Connection.ReadMessage()
-		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
-			}
-			break
-		}
-		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		fmt.Println(message)
 	}
 }
