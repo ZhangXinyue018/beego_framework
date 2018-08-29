@@ -111,7 +111,6 @@ func (service *WebSocketService) keepWriting(client *socket.Client) () {
 				return
 			}
 		}
-		break
 	}
 }
 
