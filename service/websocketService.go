@@ -3,7 +3,6 @@ package service
 import (
 	"github.com/gorilla/websocket"
 	"beego_framework/domain/socket"
-	"fmt"
 	"time"
 	"bytes"
 )
@@ -60,6 +59,11 @@ func (service *WebSocketService) CreateClient(client *socket.Client) () {
 }
 
 func (service *WebSocketService) closeConn(client *socket.Client) () {
+	defer func() {
+		if x := recover(); x != nil {
+			//ignore error
+		}
+	}()
 	for _, eventChannel := range service.EventChannels {
 		eventChannel.UnRegister <- client
 	}
@@ -68,28 +72,27 @@ func (service *WebSocketService) closeConn(client *socket.Client) () {
 
 func (service *WebSocketService) keepReading(client *socket.Client) () {
 	defer func() {
-		service.closeConn(client)
+		if x := recover(); x != nil {
+			service.closeConn(client)
+		}
 	}()
 	for {
-		_, message, err := client.Connection.ReadMessage()
-		if err != nil {
-			service.closeConn(client)
-			break
-		}
+		_, message, _ := client.Connection.ReadMessage()
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		fmt.Println("Received message from client: " + string(message))
 		service.generateMessages(string(message))
 	}
 }
 
 func (service *WebSocketService) KeepWriting(client *socket.Client) () {
+	defer func() {
+		if x := recover(); x != nil {
+			service.closeConn(client)
+		}
+	}()
 	for {
 		select {
 		case message := <-client.Send:
-			err := client.Connection.WriteJSON(message)
-			if err != nil {
-				service.closeConn(client)
-			}
+			client.Connection.WriteJSON(message)
 		}
 	}
 }
