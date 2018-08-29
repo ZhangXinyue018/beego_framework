@@ -67,6 +67,7 @@ func (service *WebSocketService) closeConn(client *socket.Client) () {
 	for _, eventChannel := range service.EventChannels {
 		eventChannel.UnRegister <- client
 	}
+	close(client.Send)
 	client.Connection.Close()
 }
 
@@ -77,7 +78,11 @@ func (service *WebSocketService) keepReading(client *socket.Client) () {
 		}
 	}()
 	for {
-		_, message, _ := client.Connection.ReadMessage()
+		_, message, err := client.Connection.ReadMessage()
+		if err != nil {
+			service.closeConn(client)
+			return
+		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		service.generateMessages(string(message))
 	}
@@ -92,8 +97,13 @@ func (service *WebSocketService) KeepWriting(client *socket.Client) () {
 	for {
 		select {
 		case message := <-client.Send:
-			client.Connection.WriteJSON(message)
+			err := client.Connection.WriteJSON(message)
+			if err != nil {
+				service.closeConn(client)
+				return
+			}
 		}
+		break
 	}
 }
 
