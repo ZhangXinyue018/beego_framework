@@ -5,8 +5,13 @@ import (
 )
 
 type EventChannel struct {
-	Clients    map[*websocket.Conn]bool
+	Clients    map[*websocket.Conn]*Client
 	Broadcast  chan Message
-	Register   chan *websocket.Conn
-	UnRegister chan *websocket.Conn
+	Register   chan *Client
+	UnRegister chan *Client
+}
+
+type Client struct {
+	Connection *websocket.Conn
+	Send       chan Message
 }

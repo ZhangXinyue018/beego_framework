@@ -33,4 +33,11 @@ func PerformSetUp() {
 	go func() {
 		http.ListenAndServe("localhost:6060", nil)
 	}()
+	//go func() {
+	//	for {
+	//		time.Sleep(3 * time.Second)
+	//		fmt.Println(bean.WebSocketServiceBean.EventChannels)
+	//		fmt.Println(bean.WebSocketServiceBean.ConnectionMap)
+	//	}
+	//}()
 }

@@ -15,7 +15,7 @@ var (
 
 type WebSocketService struct {
 	EventChannels map[string]socket.EventChannel
-	ConnectionMap map[*websocket.Conn]bool
+	ConnectionMap map[*websocket.Conn]*socket.Client
 }
 
 func (service *WebSocketService) HandleChannelEvents() () {
@@ -23,68 +23,74 @@ func (service *WebSocketService) HandleChannelEvents() () {
 		for _, eventChannel := range service.EventChannels {
 			select {
 			case broadcast := <-eventChannel.Broadcast:
-				for connection, value := range eventChannel.Clients {
-					if value {
-						go func() {
-							err := connection.WriteJSON(broadcast)
-							if err != nil {
-								service.closeConn(connection)
-							}
-						}()
-					}
+				for _, client := range eventChannel.Clients {
+					client.Send <- broadcast
 				}
 			case register := <-eventChannel.Register:
-				eventChannel.Clients[register] = true
+				eventChannel.Clients[register.Connection] = register
 			case unRegister := <-eventChannel.UnRegister:
-				delete(eventChannel.Clients, unRegister)
+				delete(eventChannel.Clients, unRegister.Connection)
 			}
 		}
 	}
 }
 
-func (service *WebSocketService) JoinEvent(conn *websocket.Conn, eventName string) () {
+func (service *WebSocketService) JoinEvent(client *socket.Client, eventName string) () {
 	if _, ok := service.EventChannels[eventName]; !ok {
 		service.EventChannels[eventName] = socket.EventChannel{
-			Clients:    map[*websocket.Conn]bool{},
+			Clients:    map[*websocket.Conn]*socket.Client{},
 			Broadcast:  make(chan socket.Message, 10),
-			Register:   make(chan *websocket.Conn, 10),
-			UnRegister: make(chan *websocket.Conn, 10),
+			Register:   make(chan *socket.Client, 10),
+			UnRegister: make(chan *socket.Client, 10),
 		}
 	}
-	service.EventChannels[eventName].Register <- conn
+	service.EventChannels[eventName].Register <- client
 }
 
-func (service *WebSocketService) CreateConn(conn *websocket.Conn) () {
-	service.ConnectionMap[conn] = true
-	service.JoinEvent(conn, "broadcast")
+func (service *WebSocketService) CreateClient(client *socket.Client) () {
+	service.ConnectionMap[client.Connection] = client
+	service.JoinEvent(client, "broadcast")
 	go func() {
-		if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+		if err := client.Connection.WriteMessage(websocket.PingMessage, nil); err != nil {
 			return
 		}
 	}()
-	go service.keepReading(conn)
+	go service.keepReading(client)
+	go service.KeepWriting(client)
 }
 
-func (service *WebSocketService) closeConn(conn *websocket.Conn) () {
+func (service *WebSocketService) closeConn(client *socket.Client) () {
 	for _, eventChannel := range service.EventChannels {
-		eventChannel.UnRegister <- conn
+		eventChannel.UnRegister <- client
 	}
-	conn.Close()
+	client.Connection.Close()
 }
 
-func (service *WebSocketService) keepReading(conn *websocket.Conn) () {
+func (service *WebSocketService) keepReading(client *socket.Client) () {
 	defer func() {
-		service.closeConn(conn)
+		service.closeConn(client)
 	}()
 	for {
-		_, message, err := conn.ReadMessage()
+		_, message, err := client.Connection.ReadMessage()
 		if err != nil {
-			service.closeConn(conn)
+			service.closeConn(client)
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		fmt.Println("Received message from client: " + string(message))
 		service.generateMessages(string(message))
+	}
+}
+
+func (service *WebSocketService) KeepWriting(client *socket.Client) () {
+	for {
+		select {
+		case message := <-client.Send:
+			err := client.Connection.WriteJSON(message)
+			if err != nil {
+				service.closeConn(client)
+			}
+		}
 	}
 }
 

@@ -5,7 +5,8 @@ import (
 	"fmt"
 		"net/http"
 	"beego_framework/bean"
-		)
+	"beego_framework/domain/socket"
+)
 
 type WebSocketController struct {
 	MainController
@@ -27,6 +28,10 @@ func (webSocketController *WebSocketController) Get() {
 		fmt.Println(err)
 		return
 	}
-	bean.WebSocketServiceBean.CreateConn(conn)
+	client := socket.Client{
+		Connection : conn,
+		Send       :make(chan socket.Message, 10),
+	}
+	bean.WebSocketServiceBean.CreateClient(&client)
 }
 

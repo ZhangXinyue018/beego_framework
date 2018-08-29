@@ -17,6 +17,6 @@ func init() {
 	}
 	WebSocketServiceBean = &service.WebSocketService{
 		EventChannels: map[string]socket.EventChannel{},
-		ConnectionMap: map[*websocket.Conn]bool{},
+		ConnectionMap: map[*websocket.Conn]*socket.Client{},
 	}
 }
