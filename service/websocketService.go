@@ -55,7 +55,7 @@ func (service *WebSocketService) CreateClient(client *socket.Client) () {
 		}
 	}()
 	go service.keepReading(client)
-	go service.KeepWriting(client)
+	go service.keepWriting(client)
 }
 
 func (service *WebSocketService) closeConn(client *socket.Client) () {
@@ -88,7 +88,7 @@ func (service *WebSocketService) keepReading(client *socket.Client) () {
 	}
 }
 
-func (service *WebSocketService) KeepWriting(client *socket.Client) () {
+func (service *WebSocketService) keepWriting(client *socket.Client) () {
 	defer func() {
 		if x := recover(); x != nil {
 			service.closeConn(client)
