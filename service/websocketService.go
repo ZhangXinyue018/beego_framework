@@ -46,6 +46,13 @@ func (service *WebSocketService) JoinEvent(client *socket.Client, eventName stri
 	service.EventChannels[eventName].Register <- client
 }
 
+func (service *WebSocketService) LeaveEvent(client *socket.Client, eventName string) () {
+	if _, ok := service.EventChannels[eventName]; !ok {
+		return
+	}
+	service.EventChannels[eventName].UnRegister <- client
+}
+
 func (service *WebSocketService) CreateClient(client *socket.Client) () {
 	service.ConnectionMap[client.Connection] = client
 	service.JoinEvent(client, "broadcast")
@@ -58,7 +65,7 @@ func (service *WebSocketService) CreateClient(client *socket.Client) () {
 	go service.keepWriting(client)
 }
 
-func (service *WebSocketService) closeConn(client *socket.Client) () {
+func (service *WebSocketService) closeClient(client *socket.Client) () {
 	defer func() {
 		if x := recover(); x != nil {
 			//ignore error
@@ -68,19 +75,20 @@ func (service *WebSocketService) closeConn(client *socket.Client) () {
 		eventChannel.UnRegister <- client
 	}
 	close(client.Send)
+	delete(service.ConnectionMap, client.Connection)
 	client.Connection.Close()
 }
 
 func (service *WebSocketService) keepReading(client *socket.Client) () {
 	defer func() {
 		if x := recover(); x != nil {
-			service.closeConn(client)
+			service.closeClient(client)
 		}
 	}()
 	for {
 		_, message, err := client.Connection.ReadMessage()
 		if err != nil {
-			service.closeConn(client)
+			service.closeClient(client)
 			return
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
@@ -91,7 +99,7 @@ func (service *WebSocketService) keepReading(client *socket.Client) () {
 func (service *WebSocketService) keepWriting(client *socket.Client) () {
 	defer func() {
 		if x := recover(); x != nil {
-			service.closeConn(client)
+			service.closeClient(client)
 		}
 	}()
 	for {
@@ -99,7 +107,7 @@ func (service *WebSocketService) keepWriting(client *socket.Client) () {
 		case message := <-client.Send:
 			err := client.Connection.WriteJSON(message)
 			if err != nil {
-				service.closeConn(client)
+				service.closeClient(client)
 				return
 			}
 		}
