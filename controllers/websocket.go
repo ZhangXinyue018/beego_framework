@@ -3,7 +3,7 @@ package controllers
 import (
 	"github.com/gorilla/websocket"
 	"fmt"
-		"net/http"
+	"net/http"
 	"beego_framework/bean"
 	"beego_framework/domain/socket"
 )
@@ -29,9 +29,8 @@ func (webSocketController *WebSocketController) Get() {
 		return
 	}
 	client := socket.Client{
-		Connection : conn,
-		Send       :make(chan socket.Message, 10),
+		Connection: conn,
+		Send:       make(chan socket.Message, 10),
 	}
 	bean.WebSocketServiceBean.CreateClient(&client)
 }
-

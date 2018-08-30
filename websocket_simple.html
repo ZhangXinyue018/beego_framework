@@ -12,6 +12,9 @@
             ws.onmessage = function(e) {
                 $('<li>').text(event.data).appendTo($ul);
             };
+            ws.onping = function(e){
+                $('<li>').text(event.data).appendTo($ul);
+            }
             var $ul = $('#msg-list');
 
             $('#sendreq').on('click', function() {

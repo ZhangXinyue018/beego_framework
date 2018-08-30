@@ -5,11 +5,14 @@ import (
 	"beego_framework/domain/socket"
 	"time"
 	"bytes"
-)
+	)
 
 var (
-	newline = []byte{'\n'}
-	space   = []byte{' '}
+	newline    = []byte{'\n'}
+	space      = []byte{' '}
+	pongWait   = 30 * time.Second
+	pingPeriod = 30 * time.Second
+	writeWait  = 30 * time.Second
 )
 
 type WebSocketService struct {
@@ -56,11 +59,6 @@ func (service *WebSocketService) LeaveEvent(client *socket.Client, eventName str
 func (service *WebSocketService) CreateClient(client *socket.Client) () {
 	service.ConnectionMap[client.Connection] = client
 	service.JoinEvent(client, "broadcast")
-	go func() {
-		if err := client.Connection.WriteMessage(websocket.PingMessage, nil); err != nil {
-			return
-		}
-	}()
 	go service.keepReading(client)
 	go service.keepWriting(client)
 }
@@ -85,6 +83,13 @@ func (service *WebSocketService) keepReading(client *socket.Client) () {
 			service.closeClient(client)
 		}
 	}()
+	client.Connection.SetReadDeadline(time.Now().Add(pongWait))
+	client.Connection.SetPongHandler(
+		func(string) error {
+			client.Connection.SetReadDeadline(time.Now().Add(pongWait))
+			return nil
+		},
+	)
 	for {
 		_, message, err := client.Connection.ReadMessage()
 		if err != nil {
@@ -97,15 +102,25 @@ func (service *WebSocketService) keepReading(client *socket.Client) () {
 }
 
 func (service *WebSocketService) keepWriting(client *socket.Client) () {
+	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		if x := recover(); x != nil {
+			ticker.Stop()
 			service.closeClient(client)
 		}
 	}()
 	for {
 		select {
 		case message := <-client.Send:
+			client.Connection.SetWriteDeadline(time.Now().Add(writeWait))
 			err := client.Connection.WriteJSON(message)
+			if err != nil {
+				service.closeClient(client)
+				return
+			}
+		case <-ticker.C:
+			client.Connection.SetWriteDeadline(time.Now().Add(writeWait))
+			err := client.Connection.WriteMessage(websocket.PingMessage, []byte{})
 			if err != nil {
 				service.closeClient(client)
 				return
