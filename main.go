@@ -8,8 +8,7 @@ import (
 	"github.com/astaxie/beego"
 	"fmt"
 	"beego_framework/cronjobs"
-	"beego_framework/bean"
-	"net/http"
+		"net/http"
 )
 
 func main() {
@@ -29,7 +28,6 @@ func main() {
 
 func PerformSetUp() {
 	go cronjobs.StartCronjobs()
-	go bean.WebSocketServiceBean.HandleChannelEvents()
 	go func() {
 		http.ListenAndServe("localhost:6060", nil)
 	}()

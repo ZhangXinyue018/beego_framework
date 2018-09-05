@@ -16,7 +16,7 @@ func init() {
 		ExchangerRpc: ExchangerRpcBean,
 	}
 	WebSocketServiceBean = &service.WebSocketService{
-		EventChannels: map[string]socket.EventChannel{},
+		EventChannels: map[string]*socket.EventChannel{},
 		ConnectionMap: map[*websocket.Conn]*socket.Client{},
 	}
 }
