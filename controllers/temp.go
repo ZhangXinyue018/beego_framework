@@ -3,7 +3,8 @@ package controllers
 import (
 	"github.com/skip2/go-qrcode"
 	"fmt"
-	)
+	"beego_framework/commons"
+)
 
 type TempController struct {
 	MainController
@@ -15,7 +16,7 @@ type TempController struct {
 // @Success 200 {string}
 // @router /test [get]
 func (testController *TempController) Test() {
-	testController.HandleError()
+	defer testController.HandleError()
 	str := testController.GetString("str")
 	result, err := qrcode.Encode(str, qrcode.Medium, 256)
 	if err != nil {
@@ -34,7 +35,23 @@ func (testController *TempController) Test() {
 // @Success 200 {string}
 // @router / [get]
 func (testController *TempController) Get() {
-	testController.HandleError()
+	defer testController.HandleError()
+	testOneAsync := make(chan commons.Async)
+	defer commons.ClearGoRoutine(testOneAsync)
+	go func() {
+		defer commons.DeferErrorAsync(testOneAsync)
+		testOneAsync <- commons.Async{Error: fmt.Errorf("test")}
+	}()
+
+	testTwoAsync := make(chan commons.Async)
+	defer commons.ClearGoRoutine(testTwoAsync)
+	go func() {
+		defer commons.DeferErrorAsync(testTwoAsync)
+		testTwoAsync <- commons.Async{Result: 2}
+	}()
+	fmt.Println(commons.GetAsyncResult(testOneAsync).(int))
+	fmt.Println(commons.GetAsyncResult(testTwoAsync).(int))
+
 	testController.Data["json"] = "ok"
 	testController.ServeJSON()
 }
