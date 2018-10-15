@@ -2,10 +2,10 @@ package thirdparty
 
 import (
 	"beego_framework/domain"
-	"net/http"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"encoding/json"
+	"net/http"
 	"strconv"
 	"strings"
 )
@@ -99,44 +99,60 @@ type CoinMarketObj struct {
 func (rpc *ExchangerRpc) getCoinMarketPrice(symbolNameList *[]string) (*[]domain.SimpleExchangerRate) {
 	var resultList []domain.SimpleExchangerRate
 	for _, symbolName := range *symbolNameList {
-		url := rpc.CoinMarketUrl + "/v1/ticker/" + symbolName
-		response, err := http.Get(url)
-		if err != nil {
-			fmt.Println(err)
+		result, err := rpc.getSingleCoinMarketPrice(symbolName)
+		if err != nil || result == nil {
 			continue
 		}
-		if response.StatusCode == 200 {
-			r, err := ioutil.ReadAll(response.Body)
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-
-			listPriceResponse := &([]CoinMarketObj{})
-			err = json.Unmarshal([]byte(string(r)), listPriceResponse)
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-			price, err := strconv.ParseFloat((*listPriceResponse)[0].PriceUsd, 64)
-			percentageChange24h, err := strconv.ParseFloat((*listPriceResponse)[0].PercentageChange24H, 64)
-			if err != nil {
-				fmt.Println(err)
-				continue
-			}
-			result := domain.SimpleExchangerRate{
-				Symbol:              symbolName,
-				Exchanger:           string(COIN_MARKET),
-				Price:               price,
-				PercentageChange24H: percentageChange24h,
-			}
-			resultList = append(resultList, result)
-		} else {
-			fmt.Println("error request coinmarket")
-			continue
-		}
+		resultList = append(resultList, *result)
 	}
 	return &resultList
+}
+
+func (rpc *ExchangerRpc) getSingleCoinMarketPrice(symbolName string) (*domain.SimpleExchangerRate, error) {
+	var err error
+	defer func() {
+		if x := recover(); x != nil {
+			err = x.(error)
+		}
+	}()
+	url := rpc.CoinMarketUrl + "/v1/ticker/" + symbolName
+	response, err := http.Get(url)
+	defer response.Body.Close()
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	if response.StatusCode == 200 {
+		r, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			fmt.Println(err)
+			return nil, err
+		}
+
+		listPriceResponse := &([]CoinMarketObj{})
+		err = json.Unmarshal([]byte(string(r)), listPriceResponse)
+		if err != nil {
+			fmt.Println(err)
+			return nil, err
+		}
+		price, err := strconv.ParseFloat((*listPriceResponse)[0].PriceUsd, 64)
+		percentageChange24h, err := strconv.ParseFloat((*listPriceResponse)[0].PercentageChange24H, 64)
+		if err != nil {
+			fmt.Println(err)
+			return nil, err
+		}
+		result := domain.SimpleExchangerRate{
+			Symbol:              symbolName,
+			Exchanger:           string(COIN_MARKET),
+			Price:               price,
+			PercentageChange24H: percentageChange24h,
+		}
+		return &result, nil
+	} else {
+		fmt.Println("error request coinmarket")
+		return nil, err
+	}
+	return nil, err
 }
 
 func (rpc *ExchangerRpc) getBitfinexPrice(symbolNameList *[]string) (*[]domain.SimpleExchangerRate) {

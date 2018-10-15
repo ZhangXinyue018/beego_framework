@@ -11,6 +11,7 @@ import (
 	"beego_framework/controllers"
 
 	"github.com/astaxie/beego"
+	"beego_framework/bean"
 )
 
 func init() {
@@ -27,7 +28,9 @@ func init() {
 		),
 		beego.NSNamespace("/temp",
 			beego.NSInclude(
-				&controllers.TempController{},
+				&controllers.TempController{
+					TestService: bean.TestServiceBean,
+				},
 			),
 		),
 	)

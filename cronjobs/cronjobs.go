@@ -1,18 +1,13 @@
 package cronjobs
 
 import (
-	"github.com/robfig/cron"
 	"beego_framework/bean"
+	"github.com/robfig/cron"
 )
 
-func StartCronjobs(){
+func StartCronjobs() {
 	cronjob := cron.New()
-	cronjob.AddFunc("@every 2m", func() {
-		defer func(){
-			if x := recover(); x != nil {
-				// just ignore
-			}
-		}()
+	cronjob.AddFunc("@every 30s", func() {
 		bean.ExchangerServiceBean.UpdateExchangerRate()
 	})
 	cronjob.Start()

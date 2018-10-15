@@ -1,18 +1,17 @@
 package main
 
 import (
-	_ "beego_framework/routers"
 	_ "beego_framework/bean"
+	_ "beego_framework/routers"
 	_ "net/http/pprof"
 
-	"github.com/astaxie/beego"
-	"fmt"
 	"beego_framework/cronjobs"
-		"net/http"
+	"fmt"
+	"github.com/astaxie/beego"
+	"net/http"
 )
 
 func main() {
-	PerformSetUp()
 	PerformSetUp()
 	err := beego.LoadAppConfig("ini", "conf/app.conf")
 	if err != nil {

@@ -1,7 +1,7 @@
 package bean
 
 import (
-	"beego_framework/repository/mysql"
+	mysql "beego_framework/repository/mysql/impl"
 	)
 
 var (

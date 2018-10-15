@@ -1,13 +1,14 @@
 package controllers
 
 import (
-	"github.com/skip2/go-qrcode"
+	"beego_framework/service"
 	"fmt"
-	"beego_framework/commons"
+	"github.com/skip2/go-qrcode"
 )
 
 type TempController struct {
 	MainController
+	TestService service.ITestService
 }
 
 // @Title Test
@@ -36,22 +37,24 @@ func (testController *TempController) Test() {
 // @router / [get]
 func (testController *TempController) Get() {
 	defer testController.HandleError()
-	testOneAsync := make(chan commons.Async)
-	defer commons.ClearGoRoutine(testOneAsync)
-	go func() {
-		defer commons.DeferErrorAsync(testOneAsync)
-		testOneAsync <- commons.Async{Error: fmt.Errorf("test")}
-	}()
-
-	testTwoAsync := make(chan commons.Async)
-	defer commons.ClearGoRoutine(testTwoAsync)
-	go func() {
-		defer commons.DeferErrorAsync(testTwoAsync)
-		testTwoAsync <- commons.Async{Result: 2}
-	}()
-	fmt.Println(commons.GetAsyncResult(testOneAsync).(int))
-	fmt.Println(commons.GetAsyncResult(testTwoAsync).(int))
-
+	//testOneAsync := make(chan commons.Async)
+	//defer commons.ClearGoRoutine(testOneAsync)
+	//go func() {
+	//	defer commons.DeferErrorAsync(testOneAsync)
+	//	testOneAsync <- commons.Async{Error: fmt.Errorf("test")}
+	//}()
+	//
+	//testTwoAsync := make(chan commons.Async)
+	//defer commons.ClearGoRoutine(testTwoAsync)
+	//go func() {
+	//	defer commons.DeferErrorAsync(testTwoAsync)
+	//	testTwoAsync <- commons.Async{Result: 2}
+	//}()
+	//fmt.Println(commons.GetAsyncResult(testOneAsync).(int))
+	//fmt.Println(commons.GetAsyncResult(testTwoAsync).(int))
+	fmt.Println("---------------------------------")
+	fmt.Println(testController.TestService.Test())
+	fmt.Println("---------------------------------")
 	testController.Data["json"] = "ok"
 	testController.ServeJSON()
 }

@@ -1,4 +1,4 @@
-package service
+package impl
 
 import (
 	"beego_framework/rpc/thirdparty"
@@ -11,4 +11,5 @@ type ExchangerService struct {
 
 func (service *ExchangerService) UpdateExchangerRate() () {
 	fmt.Println("updated")
+	fmt.Println(service.ExchangerRpc.ListPrice(&[]string{"eos"}))
 }
