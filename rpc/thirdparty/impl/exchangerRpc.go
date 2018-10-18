@@ -1,4 +1,4 @@
-package thirdparty
+package impl
 
 import (
 	"beego_framework/domain"

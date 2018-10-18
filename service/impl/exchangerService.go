@@ -6,7 +6,7 @@ import (
 )
 
 type ExchangerService struct {
-	ExchangerRpc *thirdparty.ExchangerRpc
+	ExchangerRpc thirdparty.IExchangerRpc
 }
 
 func (service *ExchangerService) UpdateExchangerRate() () {

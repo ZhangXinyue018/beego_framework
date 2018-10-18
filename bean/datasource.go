@@ -4,21 +4,14 @@ import (
 	"github.com/go-xorm/xorm"
 	"github.com/robfig/cron"
 
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/go-xorm/core"
 	"github.com/astaxie/beego"
 	"github.com/go-redis/redis"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-xorm/core"
 	"gopkg.in/mgo.v2"
 )
 
-var (
-	MysqlReadEngineBean  *xorm.Engine
-	MysqlWriteEngineBean *xorm.Engine
-
-	//MongoSessionBean *mgo.Session
-)
-
-func init() {
+func InitDatasource() {
 	MysqlReadEngineBean = getMysqlEngine(beego.AppConfig.String("read_mysql_url"))
 	MysqlWriteEngineBean = getMysqlEngine(beego.AppConfig.String("write_mysql_url"))
 

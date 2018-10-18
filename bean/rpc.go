@@ -1,15 +1,11 @@
 package bean
 
 import (
+	thirdparty "beego_framework/rpc/thirdparty/impl"
 	"github.com/astaxie/beego"
-	"beego_framework/rpc/thirdparty"
 )
 
-var (
-	ExchangerRpcBean *thirdparty.ExchangerRpc
-)
-
-func init() {
+func InitRpc() {
 	ExchangerRpcBean = &thirdparty.ExchangerRpc{
 		BitstampUrl:   beego.AppConfig.String("bitstamp_url"),
 		CoinMarketUrl: beego.AppConfig.String("coinmarket_url"),

@@ -3,12 +3,12 @@ package main
 import (
 	_ "beego_framework/bean"
 	_ "beego_framework/routers"
+	"net/http"
 	_ "net/http/pprof"
 
 	"beego_framework/cronjobs"
 	"fmt"
 	"github.com/astaxie/beego"
-	"net/http"
 )
 
 func main() {

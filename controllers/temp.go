@@ -1,7 +1,10 @@
 package controllers
 
 import (
+	"beego_framework/bean"
+	"beego_framework/domain"
 	"beego_framework/service"
+	"encoding/json"
 	"fmt"
 	"github.com/skip2/go-qrcode"
 )
@@ -54,6 +57,10 @@ func (testController *TempController) Get() {
 	//fmt.Println(commons.GetAsyncResult(testTwoAsync).(int))
 	fmt.Println("---------------------------------")
 	fmt.Println(testController.TestService.Test())
+	var testmysql domain.TestMysql
+	json.Unmarshal([]byte("{\"id\": 13, \"test\": \"hello\"}"), &testmysql)
+	fmt.Printf("%v", testmysql)
+	bean.ExchangerServiceBean.UpdateExchangerRate()
 	fmt.Println("---------------------------------")
 	testController.Data["json"] = "ok"
 	testController.ServeJSON()

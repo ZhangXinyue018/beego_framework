@@ -6,7 +6,7 @@ import (
 )
 
 type TestService struct {
-	Repository mysql.ITestMysqlRepo
+	Repository mysql.ITempMysqlRepo
 }
 
 func (service *TestService) Test() (*[]domain.TestMysql) {

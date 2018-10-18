@@ -4,6 +4,6 @@ import (
 	"beego_framework/domain"
 )
 
-type ITestMysqlRepo interface {
+type ITempMysqlRepo interface {
 	ListAll() (*[]domain.TestMysql)
 }

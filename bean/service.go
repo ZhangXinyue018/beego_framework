@@ -7,13 +7,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var (
-	ExchangerServiceBean *serviceimpl.ExchangerService
-	WebSocketServiceBean *service.WebSocketService
-	TestServiceBean      *serviceimpl.TestService
-)
-
-func init() {
+func InitService() {
 	ExchangerServiceBean = &serviceimpl.ExchangerService{
 		ExchangerRpc: ExchangerRpcBean,
 	}
@@ -22,6 +16,6 @@ func init() {
 		ConnectionMap: map[*websocket.Conn]*socket.Client{},
 	}
 	TestServiceBean = &serviceimpl.TestService{
-		Repository: MysqlTestRepoBean,
+		Repository: MysqlTempRepoBean,
 	}
 }

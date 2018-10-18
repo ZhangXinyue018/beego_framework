@@ -1,19 +1,17 @@
 package bean
 
 import (
-	"beego_framework/domain/response"
 	"beego_framework/domain/logicerror"
+	"beego_framework/domain/response"
 	"fmt"
 )
 
 const (
-	UNKNOWN_ERROR                        = "ew_000"
-	INPUT_ERROR                          = "ew_001"
+	UNKNOWN_ERROR = "ew_000"
+	INPUT_ERROR   = "ew_001"
 )
 
-var ErrorMap map[string]response.BaseResp
-
-func init() {
+func InitErrorMap() {
 	ErrorMap = make(map[string]response.BaseResp)
 	ErrorMap[UNKNOWN_ERROR] = response.BaseResp{
 		ErrorCode: UNKNOWN_ERROR, ErrorMessage: "Unknown error",
